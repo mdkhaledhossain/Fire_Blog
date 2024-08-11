@@ -5,6 +5,7 @@ from django.urls import reverse, reverse_lazy
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 # from App_Blog.forms import CommentForm
+from django.utils.text import slugify
 import uuid
 
 
@@ -19,7 +20,8 @@ class CreateBlog(LoginRequiredMixin, CreateView):
         blog_obj = form.save(commit=False)
         blog_obj.author = self.request.user
         title = blog_obj.blog_title
-        blog_obj.slug = title.replace(" ", "-") + "-" + str(uuid.uuid4())
+        safe_title = slugify(title)
+        blog_obj.slug = f"{safe_title}-{str(uuid.uuid4())}"
         blog_obj.save()
         return HttpResponseRedirect(reverse('index'))
     
@@ -27,3 +29,10 @@ class BlogList(ListView):
     context_object_name = 'blogs'
     model = Blog
     template_name = 'App_Blog/blog_list.html'
+
+
+@login_required
+def blog_details(request, slug):
+    blog = Blog.objects.get(slug=slug)
+
+    return render(request, 'App_Blog/blog_details.html', context={'blog':blog})
